@@ -40,10 +40,20 @@ int main() {
     void *pointers[26] = {NULL};
 	
 	char cmdline[255];
-    fgets(cmdline, 255, stdin);
-	printf("%s",cmdline);
-	printf("%s",cmdline);
-    // TODO: Complete the main function here
+	char* cmd[4];
+	int cmdCount = 0;
+	while (fgets(cmdline,255, stdin) != NULL)
+	{
+		char *token = strtok(cmdline, " ");
+		while (token != NULL)
+		{
+			cmd[cmdCount++] = token;
+			token = strtok(NULL, " ");
+		}
+		cmd[cmdCount++] = NULL;
+		cmdCount--;
+		printf("%s %s %s %s",*cmd[0].*cmd[1],*cmd[2],*cmd[3]);
+	}
     return 0;
 }
 void *mm_malloc(size_t size) {
