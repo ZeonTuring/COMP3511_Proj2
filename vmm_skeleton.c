@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-
+#include <string.h>
 // Data structure of meta_data 
 struct 
   __attribute__((__packed__)) // compiler directive, avoid "gcc" padding bytes to struct
@@ -52,16 +52,53 @@ int main() {
 		}
 		cmd[cmdCount++] = NULL;
 		cmdCount--;
-		printf("%s %s %s %s",*cmd[0].*cmd[1],*cmd[2],*cmd[3]);
+		if (cmdCount == 2)
+		{
+			mm_free(pointers[(int)*cmd[1]-97]);
+			pointers[(int)*cmd[1]-97] = NULL;
+		}
+		else 
+			pointer[strtol(cmd[2],NULL,10)] = mm_malloc(strtol(cmd[2],NULL,10));
+		printf("=== %s ===\n",cmdline);
+		mm_print();
+		cmdCount = 0;
 	}
     return 0;
 }
 void *mm_malloc(size_t size) {
-    // TODO: Complete mm_malloc here   
-    return NULL;
+    // TODO: Complete mm_malloc here
+	struct meta_data *cur = head->next;
+	while ( cur != head ) {
+		if (cur->size >= (size + meta_data_size))
+		{
+			new meta_data = (meta_data*)(cur + cur->size + meta_data_size);
+			new_meta_data->free = 'f';
+			new meta_data->size = cur->size - size - meta_data_size;
+			cur->free = 'o';
+			cur->size=size;
+			list_add(new_meta_data, cur, cur->next);
+			return cur + meta_data_size;
+		}
+		else 
+		{
+			cur->free = 'o';
+			return cur + meta_data_size;
+		}
+        cur = cur->next;
+    } 
+	new_meta_data = (meta_data*)sbrk(0);
+	sbrk(size + meta_data_size);
+	new_meta_data.free = 'o';
+	new_meta_data.size = size;
+	list_add_tail(new_meta_data,head);
+	return (sbrk(0) - size);
 }
 void mm_free(void *p) {
-    // TODO: Complete mm_free here
+	struct meta_data *cur = head;
+    while ( cur->next != head && cur->next != p) {
+        cur = cur->next;
+    }
+	cur->next->free = 'f';	
 }
 
 void init_list(struct meta_data *list) {
@@ -95,16 +132,4 @@ void mm_print() {
         i = i+1;
         cur = cur->next;
     } 
-}
-
-void ParseArgument(char** args, char* cmd)
-{
-	int num = 0;
-	char* token = strtok(cmd," ");
-	while (token != NULL)
-	{
-		args[num++] = token;
-		token = strtok(NULL, " ");
-	}
-	args[num++] = NULL;
 }
