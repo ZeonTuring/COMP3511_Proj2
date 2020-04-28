@@ -44,6 +44,11 @@ int main() {
 	int cmdCount = 0;
 	while (fgets(cmdline,255, stdin) != NULL)
 	{
+		if (cmdline[strlen(cmdline)-1] == '\n')
+			cmdline[strlen(cmdline)-1] = '\0';
+		while (cmdline[strlen(cmdline)-1] == ' ')
+			cmdline[strlen(cmdline)-1] = '\0';
+		printf("=== %s ===\n",cmdline);
 		char *token = strtok(cmdline, " ");
 		while (token != NULL)
 		{
@@ -58,8 +63,8 @@ int main() {
 			pointers[(int)*cmd[1]-97] = NULL;
 		}
 		else 
-			pointer[strtol(cmd[2],NULL,10)] = mm_malloc(strtol(cmd[2],NULL,10));
-		printf("=== %s ===\n",cmdline);
+			pointers[(int)*cmd[1]-97] = mm_malloc(strtol(cmd[2],NULL,10));
+		
 		mm_print();
 		cmdCount = 0;
 	}
@@ -68,34 +73,42 @@ int main() {
 void *mm_malloc(size_t size) {
     // TODO: Complete mm_malloc here
 	struct meta_data *cur = head->next;
-	while ( cur != head ) {
+	struct meta_data* new_meta_data;
+	while ( cur != head) 
+	{	
+		if (cur->free == 'f')
 		if (cur->size >= (size + meta_data_size))
-		{
-			new meta_data = (meta_data*)(cur + cur->size + meta_data_size);
+		{	
+			
+			new_meta_data = (struct meta_data*)((char*)cur + meta_data_size + size);
 			new_meta_data->free = 'f';
-			new meta_data->size = cur->size - size - meta_data_size;
+			new_meta_data->size = cur->size - size - meta_data_size;
 			cur->free = 'o';
 			cur->size=size;
 			list_add(new_meta_data, cur, cur->next);
-			return cur + meta_data_size;
+			return (void*)((char*)cur + meta_data_size);
 		}
-		else 
+		else if (cur->size >= size)
 		{
 			cur->free = 'o';
-			return cur + meta_data_size;
+			return (void*)((char*)cur + meta_data_size);
 		}
-        cur = cur->next;
-    } 
-	new_meta_data = (meta_data*)sbrk(0);
+        	cur = cur->next;
+   	}
+//	printf("new\n"); 
+	new_meta_data = (struct meta_data*)sbrk(0);
+//	printf("%ld\n",sbrk(0));
 	sbrk(size + meta_data_size);
-	new_meta_data.free = 'o';
-	new_meta_data.size = size;
+//	printf("%ld\n",sbrk(0));
+	new_meta_data->free = 'o';
+	new_meta_data->size = size;
 	list_add_tail(new_meta_data,head);
-	return (sbrk(0) - size);
+//	printf("%ld\n",sbrk(0)-size);
+	return (void*)(sbrk(0) - size);
 }
 void mm_free(void *p) {
 	struct meta_data *cur = head;
-    while ( cur->next != head && cur->next != p) {
+    	while ( cur->next != head && (char*)cur->next+meta_data_size != p) {
         cur = cur->next;
     }
 	cur->next->free = 'f';	
@@ -124,11 +137,11 @@ void list_add_tail(struct meta_data *new,
 void mm_print() {
     struct meta_data *cur = head->next;
     int i = 1;
-    while ( cur != head ) {
+    while ( cur != head) {
         printf("Block %02d: [%s] size = %d bytes\n", 
              i,  // block number - counting from bottom
             (cur->free=='f') ? "FREE" : "OCCP", // free or occupied
-            cur->size ); // size, in term of bytes
+            cur->size); // size, in term of bytes
         i = i+1;
         cur = cur->next;
     } 
