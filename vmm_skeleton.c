@@ -30,6 +30,20 @@ void *mm_malloc(size_t size);
 void mm_free(void *p);
 void mm_print();
 
+/*
+ * 	1.		Get input command from files and parse them by lines
+ * 	2.		While not end of file, do
+ * 		2.1		Eliminate eol and extra space for each command
+ * 		2.2		Print the command with specific format
+ * 		2.3 	Parse the command into at most 3 arguments to recongise a mm_malloc() or mm_free() operation
+ * 		2.4		If there are 2 argument, do
+ * 			2.4.1	invoke mm_free()
+ * 			2.4.2	set corresponding pointer to NULL
+ * 		2.5		else invoke mm_malloc() and assign return address to corresponding pointer entry
+ * 		2.6
+ * 	5.	invoke mm_print() to print result
+ * 	6.	set command counter to 0 for next iteration
+ */
 
 int main() {
     start_heap = sbrk(0);
@@ -70,6 +84,27 @@ int main() {
 	}
     return 0;
 }
+
+/*
+ * 	1.	Construct two meta_data struct for iterating(init to cur->next) and storing new data
+ * 	2.	While the meta data block is not the dummy head node, do
+ * 		2.1	If the current block is free, do
+ * 			2.1.1	If the current block size is big enough to be split, do
+ * 				2.1.1.1	Constrcut a meta_data block after the current block
+ * 				2.1.1.2	Initialise the block with attributes 'f' and appoint corresponding size
+ * 				2.1.1.3	Set the current blcok to occupied and assigned suitable size
+ * 				2.1.1.4 return with pointer of memory of current meta_data block
+ * 			2.1.2	else if current block size is large enough for memory allocation, do
+ * 				2.1.2.1	Set cuurent block to occupied.
+ * 				2.1.2.2 return pointer the memory of the current meta_data block
+ * 		2.2	Set current meta_data block pointer to be the next one
+ * 	3.	Construct a new meta_data block at the end of heap
+ * 	4.	Increase the heap size by sbrk() with corresponding size
+ * 	5.	Set the new meta_data block attributes
+ * 	6.	Add the new meta_data block at the end of the doubly linked list
+ * 	7.	Return the address of the newly created memory.
+ */
+
 void *mm_malloc(size_t size) {
     // TODO: Complete mm_malloc here
 	struct meta_data *cur = head->next;
@@ -77,38 +112,42 @@ void *mm_malloc(size_t size) {
 	while ( cur != head) 
 	{	
 		if (cur->free == 'f')
-		if (cur->size >= (size + meta_data_size))
-		{	
-			
-			new_meta_data = (struct meta_data*)((char*)cur + meta_data_size + size);
-			new_meta_data->free = 'f';
-			new_meta_data->size = cur->size - size - meta_data_size;
-			cur->free = 'o';
-			cur->size=size;
-			list_add(new_meta_data, cur, cur->next);
-			return (void*)((char*)cur + meta_data_size);
-		}
-		else if (cur->size >= size)
-		{
-			cur->free = 'o';
-			return (void*)((char*)cur + meta_data_size);
-		}
+			if (cur->size >= (size + meta_data_size))
+			{	
+				new_meta_data = (struct meta_data*)((char*)cur + meta_data_size + size);
+				new_meta_data->free = 'f';
+				new_meta_data->size = cur->size - size - meta_data_size;
+				cur->free = 'o';
+				cur->size=size;
+				list_add(new_meta_data, cur, cur->next);
+				return (void*)((char*)cur + meta_data_size);
+			}
+			else if (cur->size >= size)
+			{
+				cur->free = 'o';
+				return (void*)((char*)cur + meta_data_size);
+			}
         	cur = cur->next;
    	}
-//	printf("new\n"); 
 	new_meta_data = (struct meta_data*)sbrk(0);
-//	printf("%ld\n",sbrk(0));
 	sbrk(size + meta_data_size);
-//	printf("%ld\n",sbrk(0));
 	new_meta_data->free = 'o';
 	new_meta_data->size = size;
 	list_add_tail(new_meta_data,head);
-//	printf("%ld\n",sbrk(0)-size);
 	return (void*)(sbrk(0) - size);
 }
+
+/*
+ *	1.	Init a meta_data pointer pointing to the head node
+ *	2.	While the next meta_data block is not head node and not the meta_data block of the target memory region, do
+ *		2.1 Set current meta_data pointer to the next one
+ *	3.	Set the next meta_data block to occupied
+ */
+
 void mm_free(void *p) {
 	struct meta_data *cur = head;
-    	while ( cur->next != head && (char*)cur->next+meta_data_size != p) {
+    while ( cur->next != head && (char*)cur->next+meta_data_size != p) 
+	{
         cur = cur->next;
     }
 	cur->next->free = 'f';	
